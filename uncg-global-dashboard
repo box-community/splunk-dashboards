@@ -1,0 +1,125 @@
+<form theme="dark">
+  <label>Storage - Box</label>
+  <description>Interactive dashboard based on Box data. This assumes use of two "Metric" names in splunk (box.total_users and box.total_storage) stored in an index called "m_analytics". It also works on another regular index that contains the login field, and space_amount.</description>
+  <search id="base_search">
+    <query>index=YOURINDEX sourcetype=YOURSOURCETYPE</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="time" token="time">
+      <label>Time</label>
+      <default>
+        <earliest>-7d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>TOTAL USERS</title>
+      <single>
+        <search>
+          <query>| mstats max(_value) as "MaxValue" where index=m_analytics AND metric_name=box.total_users span=1d | timechart max("MaxValue") span=1d</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="trendInterval">-24h</option>
+        <option name="underLabel">Total Users</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>TOTAL STORAGE</title>
+      <single>
+        <search>
+          <query>| mstats max(_value) as "MaxValue" where index=m_analytics AND metric_name=box.total_storage span=1d | eval storage_tb = MaxValue / 1024 / 1024 / 1024 / 1024 | timechart max("storage_tb") span=1d</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="trendInterval">-24h</option>
+        <option name="underLabel">Total Storage TB</option>
+        <option name="unit">TB</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <search>
+          <query>| mstats max(_value) where index=m_analytics AND metric_name=box.total_users prestats=t span=1d | timechart max(_value)</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <search>
+          <query>| mstats max(_value) as "MaxValue" where index=m_analytics AND metric_name=box.total_storage span=1d | eval storage_tb = MaxValue / 1024 / 1024 / 1024 / 1024 | timechart max("storage_tb") span=1d</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Storage Distribution Breakdown for Period</title>
+      <single>
+        <search>
+          <query>index=YOURINDEX sourcetype=YOURSOURCETYPE | dedup login | eval quota= space_amount / 1024 / 1024 / 1024, lclogin=lower(login), roundQuota=round(quota, 2)  | eval Quota_Range=case(quota=0,"0 GB",quota&lt;100,"1-99 GB",quota&lt;200,"100-199 GB",quota&lt;300,"200-299 GB",quota&lt;400,"300-399 GB",quota&lt;500,"400-499 GB",quota&lt;600,"500-599 GB",quota&lt;700,"600-699 GB",quota&lt;800,"700-799 GB",quota&lt;900,"800-899 GB",quota&lt;1000,"900-998 GB",quota&gt;999,"999 GB +",1=1,"Should Never See This Just For Catching Exit Errors") | stats count by Quota_Range | sort Quota_Range</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="trellis.enabled">1</option>
+        <option name="underLabel">users</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+</form>
