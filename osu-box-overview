@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?><form>
+  <label>Box Overview</label>
+  <fieldset autoRun="true" submitButton="false">
+    <input type="time" searchWhenChanged="true">
+      <default>
+        <earliestTime>-7d</earliestTime>
+        <latestTime>now</latestTime>
+      </default>
+    </input>
+  </fieldset>index=box
+  <row>
+    <panel>
+      <map>
+        <title>Box Logins by Geographical locations</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type="login" OR event_type="admin_login" OR event_type="failed_login"|dedup event_id|  iplocation ip_address | geostats latfield=lat longfield=lon count by event_type</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="mapping.map.center">(37.000000,-122.000000)</option>
+        <option name="mapping.fieldColors">{FAILED_LOGIN:0xff0000,LOGIN:0x0000ff,ADMIN_LOGIN:0x00FF00}</option>
+        <option name="mapping.map.zoom">2</option>
+        <option name="height">400</option>
+        <drilldown>
+          <link>
+            <![CDATA[
+              /app/BoxAppForSplunk/events-drilldown?event_type=$click.name2$&earliest=$earliest$&latest=$latest$
+               ]]>
+          </link>
+        </drilldown>
+      </map>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Box Logins over time</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type="login" OR event_type="admin_login" OR event_type="failed_login"|dedup event_id | timechart count by event_type</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="height">300</option>
+        <drilldown>
+          <link>
+            <![CDATA[
+              /app/BoxAppForSplunk/events-drilldown?event_type=$click.name2$&earliest=$earliest$&latest=$latest$
+               ]]>
+          </link>
+        </drilldown>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Failed logins in last hour</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type="LOGIN" OR event_type="FAILED_LOGIN" earliest=-1h  | dedup event_id | stats count(eval(event_type="LOGIN" or event_type="FAILED_LOGIN")) as attemps, count(eval(event_type="FAILED_LOGIN")) as failed by created_by_login,ip_address|eval frate=round(failed*100/attemps) | table created_by_login,ip_address,attemps,failed,frate|where frate&gt;0|sort -frate| rename frate as "failure rate (%)"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Login Events</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type="login" OR event_type="admin_login" OR event_type="failed_login"|dedup event_id | rename created_at as time, created_by_name as name,created_by_login as login | table  time,event_type,ip_address,name,login</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Login events by non-corp users</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type="*login*"|dedup event_id|  where len('created_by_login')&gt;0|rex field=created_by_login ".@(?&lt;sourcedomain&gt;[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z])"|eval sourcedomain=lower(sourcedomain)   | search NOT sourcedomain=osu.edu | rename created_at AS time created_by_login AS login created_by_name AS name | table  time login name event_type</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Events by non-corp user</title>
+        <search>
+          <query>index=box sourcetype=box:* | dedup event_id| where len('created_by_login')&gt;0|rex field=created_by_login ".@(?&lt;sourcedomain&gt;[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z])"|eval sourcedomain=lower(sourcedomain) | search NOT sourcedomain=osu.edu | rename created_at AS time created_by_login AS login created_by_name AS name | table  time login name event_type</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Box Events over time</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type!="*TOKEN_REFRESH"|dedup event_id | timechart count by event_type</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.fieldColors">{"DELETE":0x1A496B,"DOWNLOAD":0x0D6EB6,"EDIT":0x3EADFF,"PREVIEW":0xA3D8FF,"UPLOAD":0xDDF0FF}</option>
+        <option name="charting.layout.margin">(0,0,0,0)</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisLabelsY.majorUnit">1</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <drilldown>
+          <link>
+            <![CDATA[
+              /app/BoxAppForSplunk/events-drilldown?event_type=$click.name2$&earliest=$earliest$&latest=$latest$
+               ]]>
+          </link>
+        </drilldown>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Box Events - Total</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type!="*token_refresh"|dedup event_id | stats count by event_type</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <drilldown>
+          <link>
+            <![CDATA[ 
+              /app/BoxAppForSplunk/events-drilldown?event_type=$click.value$&earliest=$earliest$&latest=$latest$ 
+               ]]>
+          </link>
+        </drilldown>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisY2.enabled">false</option>
+        <option name="charting.axisY2.scale">inherit</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Remove/Delete/Undelete Events</title>
+        <search>
+          <query>index=box sourcetype=box:* event_type="*delete*" OR event_type="*remove*"| dedup event_id |spath source | table created_at,created_by_name,created_by_login,event_type,source_item_type,source_item_name,source_parent_name| rename created_at as time, created_by_name as user, created_by_login as login,source_item_type as item_type,source_item_name as item_name,source_parent_name as parent_folder</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Users by Location</title>
+        <search>
+          <query>index=box sourcetype=box:* | dedup event_id |where len('created_by_login')&gt;0| iplocation ip_address|stats count by created_by_login,ip_address,City,Country| rename created_by_login AS User, ip_address AS "IP Address" | fields - count</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>
