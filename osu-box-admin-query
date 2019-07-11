@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><form>
+  <label>Box Admin Query</label>
+  <fieldset autoRun="true" submitButton="true">
+    <input type="text" token="event_type" searchWhenChanged="false">
+      <label>event_type</label>
+      <default>*</default>
+    </input>
+    <input type="text" token="user_name" searchWhenChanged="false">
+      <label>user_name</label>
+      <default>*</default>
+    </input>
+    <input type="text" token="login" searchWhenChanged="false">
+      <label>login</label>
+      <default>*</default>
+    </input>
+    <input type="text" token="ip_address" searchWhenChanged="false">
+      <label>ip_address</label>
+      <default>*</default>
+    </input>
+    <input type="text" token="item_name" searchWhenChanged="false">
+      <label>item_name</label>
+      <default>*</default>
+    </input>
+    <input type="time" searchWhenChanged="false">
+      <default>
+        <earliestTime>-30d</earliestTime>
+        <latestTime>now</latestTime>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <chart>
+        <title>Events by event_type</title>
+        <search>
+          <query>index=box sourcetype=box:* created_by_name="$user_name$"  created_by_login=$login$  ip_address=$ip_address$ event_type=$event_type$ |dedup event_id |fillnull value="NULL" source_item_name | search source_item_name="$item_name$"| timechart count by  event_type useother=f usenull=f</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Events by ip_address</title>
+        <search>
+          <query>index=box sourcetype=box:* created_by_name="$user_name$"  created_by_login=$login$  ip_address=$ip_address$ event_type=$event_type$ |dedup event_id |fillnull value="NULL" source_item_name | search source_item_name="$item_name$"| timechart count by  ip_address useother=f usenull=f</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Events by user</title>
+        <search>
+          <query>index=box sourcetype=box:* created_by_name="$user_name$"  created_by_login=$login$  ip_address=$ip_address$ event_type=$event_type$ |dedup event_id | fillnull value="NULL" source_item_name | search source_item_name="$item_name$"|timechart count by  created_by_login usenull=f useother=f|rename created_by_name as user_name</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Selected Actions</title>
+        <search>
+          <query>index=box sourcetype=box:* created_by_name="$user_name$"  created_by_login=$login$  ip_address=$ip_address$ event_type=$event_type$ |dedup event_id | fillnull value="NULL" source_item_name | search source_item_name="$item_name$"|table created_at,event_id,ip_address,event_type,created_by_name,created_by_login|rename created_by_name as user_name,created_by_login as login,created_at as time</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>File/Folder Actions</title>
+        <search>
+          <query>index=box sourcetype=box:* created_by_name="$user_name$"  created_by_login=$login$  ip_address=$ip_address$ event_type=$event_type$ (source_item_name=$item_name$ OR source_parent_name=$item_name$)|dedup event_id |table created_at,event_id,event_type,created_by_login,source_item_name,source_item_type,source_parent_name|rename created_at as time, created_by_login as login, source_item_name as item_name,source_item_type as item_type,source_parent_name as parent_folder</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>index=box
